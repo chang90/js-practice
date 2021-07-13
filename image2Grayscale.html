@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <span>Upload image: </span>
+  <input type="file" id="image-file">
+  <button id="save-btn">Save Grayscale Image</button>
+  <canvas id="canvas" width="500" height="500"></canvas>
+  <style>
+    #canvas {
+      display: block;
+    }
+    #save-btn {
+      display: none;
+    }
+  </style>
+  <script>
+    const EL = (sel) => document.querySelector(sel);
+    const canvas = EL("#canvas");
+    const saveButton = EL("#save-btn");
+    const ctx = canvas.getContext("2d");
+
+    const readImage = (e) => {
+      if (!e.target.files || !e.target.files[0]) {
+        saveButton.style.display = "none";
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        return;
+      }
+
+      const FR = new FileReader();
+      FR.addEventListener("load", (evt) => {
+        const img = new Image();
+        img.addEventListener("load", () => {
+          ctx.canvas.width = ctx.canvas.height * img.width / img.height;
+          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+          ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvas.width, canvas.height);
+
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          for (i = 0; i < imgData.data.length; i += 4) {
+            const average = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
+            imgData.data[i] = average;
+            imgData.data[i + 1] = average;
+            imgData.data[i + 2] = average;
+
+          }
+
+          ctx.putImageData(imgData, 0, 0);
+        });
+        img.src = evt.target.result;
+      });
+      FR.readAsDataURL(e.target.files[0]);
+      saveButton.style.display = "inline";
+    }
+
+    const saveImage = () => {
+      const image = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+      const a = document.createElement('a');
+      a.href = image;
+      a.download = 'download.png';
+      document.body.appendChild(a);
+      a.click();
+    }
+    EL("#image-file").addEventListener("change", readImage);
+    saveButton.addEventListener("click", saveImage);
+  </script>
+</body>
+
+</html>
